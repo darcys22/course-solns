@@ -23,4 +23,9 @@ class String
       hex_bytes.each_with_index{|h,i| accum << (h.to_i(16) ^ key_bytes[i.modulo key_bytes.size].to_i(16)).chr}
       return accum.join
   end
-end              
+end
+
+def cribdrag(ciphertext, crib)
+  #ciphertext.length
+  2.times{ |x| puts "#{x} : #{ciphertext[x,crib.length] ^ crib}"}
+end
