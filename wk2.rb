@@ -3,7 +3,6 @@
 require 'pry'
 require 'openssl'
 
-Mode = {cbc: 'AES-128-CBC', ctr: 'AES-128-CTR'}
 
 class Inform
 	attr_accessor :key, :iv, :ct
@@ -17,7 +16,8 @@ end
 
 class Hell
 	def initialize(infoxr, mode)
-		decrypter = OpenSSL::Cipher::Cipher.new(mode)
+		Mode = {cbc: 'AES-128-CBC', ctr: 'AES-128-CTR'}
+		decrypter = OpenSSL::Cipher::Cipher.new(Mode[mode])
 		decrypter.decrypt
 		decrypter.key = infoxr.key 	
 		decrypter.iv = infoxr.iv
