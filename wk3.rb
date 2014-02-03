@@ -1,19 +1,19 @@
 #!/usr/bin/env ruby
 
-require 'enumerator'
+require 'digest/sha2'
 require 'pry'
 
-video = File.open('test.mp4', 'rb'){|f|f.read}
-
-chunks = []
-video.bytes.each_slice(1024) { |slice| chunks << slice.join }
-
-chunks.reverse.inject(0) do |checksum, x|
-	sha256 = Digest::SHA256.new
-	sha256.update x 
-	sha256.update checksum unless x.nil?
-	checksum = sha256.hexdigest
-	binding.pry
+def chunker
+	video = File.new('acrtual.mp4', 'r') 
+	(0..video.size/1024).inject([]) { |array, i| array << video.read(1024)}
 end
 
-binding.pry
+def sha
+	video_chunks = chunker
+	sha = video_chunks.reverse.inject('') do  |sha, chunk| 
+		sha = Digest::SHA2.digest( chunk+sha )
+	end
+end
+
+puts sha.unpack('H*')
+# 5b96aece304a1422224f9a41b228416028f9ba26b0d1058f400200f06a589949

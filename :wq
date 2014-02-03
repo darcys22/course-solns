@@ -1,0 +1,25 @@
+#!/usr/bin/env ruby
+
+require 'enumerator'
+require 'pry'
+
+video = File.new('test.mp4', 'rb')
+
+#	chunks = []
+#	video.bytes.each_slice(1024) { |slice| chunks << slice.join }
+
+chunks = (0..video.size/1024).inject([]) do |chunk, x|
+	binding.pry	
+	chunk << video.read 1024 
+	chunk
+end
+binding.pry
+
+blockzero = chunks.reverse.inject('') do |checksum, x|
+	sha256 = Digest::SHA256.new
+	sha256.update x 
+	sha256.update checksum
+	checksum = sha256.hexdigest
+end
+
+binding.pry
