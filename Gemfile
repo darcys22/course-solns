@@ -2,7 +2,7 @@
 source "https://rubygems.org"
 
 gem 'pry'
-gem 'openssl'
+gem 'httparty'
 gem 'bindata'
 gem 'byebug'
 
